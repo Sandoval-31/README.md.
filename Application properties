@@ -1,0 +1,14 @@
+spring.application.name=Des3.0
+spring.datasource.url=jdbc:sqlserver://localhost:1433;databaseName=gestiondb;integratedSecurity=true;
+spring.datasource.driver-class-name=com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.SQLServerDialect
+
+# Puerto de la aplicación
+server.port=8080
+
+# JWT secret (cámbialo por uno seguro)
+jwt.secret=miClaveSuperSecretaParaJWT1234567890
+jwt.expiration=3600000  # 1 hora en milisegundos
