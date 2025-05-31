@@ -1,0 +1,31 @@
+AlumnoRepository:
+
+package sv.edu.sv.Repository;
+
+import sv.edu.sv.Model.Alumnos;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface AlumnoRepository extends JpaRepository<Alumnos, Long> {
+}
+
+MateriaRepository:
+
+package sv.edu.sv.Repository;
+
+import sv.edu.sv.Model.Materias;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface MateriaRepository extends JpaRepository<Materias, Long> {
+}
+
+UsuarioRepository: 
+
+package sv.edu.sv.Repository;
+
+import sv.edu.sv.Model.Usuarios;
+import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.Optional;
+
+public interface UsuarioRepository extends JpaRepository<Usuarios, Long> {
+    Optional<Usuarios> findByUsername(String username);
+}
