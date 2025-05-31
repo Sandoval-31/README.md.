@@ -1,332 +1,134 @@
-CLASE ALUMNO:
+Class AuthController:
 
-package sv.edu.udb;
-
-import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-
-@Entity
-@Table(name = "alumnos")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class Alumno {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(nullable = false)
-    private String nombre;
-
-    @Column(nullable = false)
-    private String apellido;
-
-    @ManyToOne
-    @JoinColumn(name = "id_materia", nullable = false)
-    private Materia materia;
-
-    // Constructor con tres argumentos
-    public Alumno(String nombre, String apellido, Materia materia) {
-        this.nombre = nombre;
-        this.apellido = apellido;
-        this.materia = materia;
-    }
-}
-
-ALUMNOREPOSITORY:
-
-package sv.edu.udb;
-import org.springframework.data.jpa.repository.JpaRepository;
-
-public interface AlumnoRepository extends JpaRepository<Alumno, Long> {
-}
-
-CLASE MATERIA:
-
-package sv.edu.udb;
-
-import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-
-@Entity
-@Table(name = "materias")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class Materia {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(nullable = false)
-    private String nombre;
-
-    //Constructor que recibe el nombre de la materia
-    public Materia(String nombre) {
-        this.nombre = nombre;
-    }
-}
-
-MATERIAREPOSITORY:
-
-package sv.edu.udb;
-import org.springframework.data.jpa.repository.JpaRepository;
-
-public interface MateriaRepository extends JpaRepository<Materia, Long> {
-}
-
-APLICATION.PROPERTIES:
-
-spring.application.name=DESAFIO
-spring.datasource.url=jdbc:h2:mem:guia-jpa
-spring.datasource.driverClassName=org.h2.Driver
-spring.datasource.username=sa
-spring.datasource.password=
-spring.jpa.database-platform=org.hibernate.dialect.H2Dialect
-spring.jpa.hibernate.ddl-auto=none
-spring.jpa.defer-datasource-initialization=true
-spring.h2.console.enabled=true
-spring.h2.console.path=/h2-console
-
-DATA.SQL:
-
-INSERT INTO materias (nombre) VALUES ('Math');
-INSERT INTO materias (nombre) VALUES ('Science');
-INSERT INTO materias (nombre) VALUES ('History');
-INSERT INTO materias (nombre) VALUES ('English');
-INSERT INTO materias (nombre) VALUES ('Art');
-
-INSERT INTO alumnos (nombre, apellido, id_materia) VALUES ('Alice', 'Smith', 1);
-INSERT INTO alumnos (nombre, apellido, id_materia) VALUES ('Bob', 'Johnson', 2);
-INSERT INTO alumnos (nombre, apellido, id_materia) VALUES ('Charlie', 'Brown', 3);
-INSERT INTO alumnos (nombre, apellido, id_materia) VALUES ('David', 'Lee', 4);
-INSERT INTO alumnos (nombre, apellido, id_materia) VALUES ('Eve', 'Wilson', 5);
-
-SCHEMA.SQL:
-
-DROP TABLE IF EXISTS alumnos;
-DROP TABLE IF EXISTS materias;
-
-CREATE TABLE materias (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(255) NOT NULL
-);
-
-CREATE TABLE alumnos (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(255) NOT NULL,
-    apellido VARCHAR(255) NOT NULL,
-    id_materia BIGINT NOT NULL,
-    FOREIGN KEY (id_materia) REFERENCES materias(id)
-);
-
-DATAINSERTIONTEST:
-
-package sv.edu.udb;
-
-import org.junit.jupiter.api.Test;
+package sv.edu.sv.Controller;
+import sv.edu.sv.Security.JwtUtil;
+import sv.edu.sv.Security.JwtFilter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.Commit;
-import org.springframework.transaction.annotation.Transactional;
-
-@SpringBootTest
-public class DataInsertionTest {
-
-    @Autowired
-    private AlumnoRepository alumnoRepository;
-
-    @Autowired
-    private MateriaRepository materiaRepository;
-
-    @Test
-    @Transactional
-    @Commit
-    public void insertTestData() {
-        Materia materia1 = new Materia("Physics");
-        Materia materia2 = new Materia("Chemistry");
-
-        materiaRepository.save(materia1);
-        materiaRepository.save(materia2);
-
-        Alumno alumno1 = new Alumno("John", "Doe", materia1);
-        Alumno alumno2 = new Alumno("Jane", "Smith", materia2);
-
-        alumnoRepository.save(alumno1);
-        alumnoRepository.save(alumno2);
-    }
-}
-
-CLASE ALUMNO REQUEST DTO:
-package sv.edu.udb.controller.request;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import lombok.Data;
-
-@Data
-public class AlumnoRequestDTO {
-    @NotBlank(message = "Nombre es obligatorio")
-    private String nombre;
-
-    @NotBlank(message = "Apellido es obligatorio")
-    private String apellido;
-
-    @NotNull(message = "ID de materia es obligatorio")
-    private Long idMateria;
-}
-
-CLASE ALUMNO CONTROLLER: 
-
-package sv.edu.udb.controller;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.*;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-import sv.edu.udb.controller.request.AlumnoRequestDTO;
-import sv.edu.udb.controller.response.AlumnoResponseDTO;
-import sv.edu.udb.service.AlumnoService;
-import java.util.List;
+
+import java.util.Map;
 
 @RestController
-@RequestMapping("/api/alumnos")
-public class AlumnoController {
-    private final AlumnoService alumnoService;
+public class AuthController {
+    @Autowired
+    private AuthenticationManager authenticationManager;
 
-    public AlumnoController(AlumnoService alumnoService) {
-        this.alumnoService = alumnoService;
-    }
+    @Autowired
+    private sv.edu.sv.Security.CustomUserDetailsService userDetailsService;
 
-    @GetMapping
-    public ResponseEntity<List<AlumnoResponseDTO>> getAllAlumnos() {
-        return ResponseEntity.ok(alumnoService.getAllAlumnos());
-    }
+    @Autowired
+    private JwtUtil jwtUtil;
 
-    @PostMapping
-    public ResponseEntity<AlumnoResponseDTO> createAlumno(@RequestBody AlumnoRequestDTO request) {
-        return new ResponseEntity<>(alumnoService.createAlumno(request), HttpStatus.CREATED);
-    }
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody Map<String, String> user) {
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(user.get("username"), user.get("password"))
+            );
+        } catch (BadCredentialsException e) {
+            return ResponseEntity.status(401).body("Credenciales inválidas");
+        }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<AlumnoResponseDTO> getAlumnoById(@PathVariable Long id) {
-        return ResponseEntity.ok(alumnoService.getAlumnoById(id));
+        final UserDetails userDetails = userDetailsService.loadUserByUsername(user.get("username"));
+        final String token = jwtUtil.generateToken(userDetails.getUsername());
+
+        return ResponseEntity.ok(Map.of("token", token));
     }
 }
 
-CLASE ALUMNO RESPONSE DTO:
+Class GestionController:
 
-package sv.edu.udb.controller.response;
+package sv.edu.sv.Controller;
 import lombok.Data;
-
-@Data
-public class AlumnoResponseDTO {
-    private Long id;
-    private String nombre;
-    private String apellido;
-    private String materia;
-}
-
-CLASE GLOBAL EXEPTION HANDLER:
-
-package sv.edu.udb.exception;
-import org.springframework.http.HttpStatus;
+import sv.edu.sv.Model.Alumnos;
+import sv.edu.sv.Model.Materias;
+import sv.edu.sv.Repository.AlumnoRepository;
+import sv.edu.sv.Repository.MateriaRepository;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ControllerAdvice;
-import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.*;
 
-@ControllerAdvice
-public class GlobalExceptionHandler {
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<String> handleResourceNotFound(ResourceNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
-    }
-}
-
-CLASE RESOURCE NOT FOUND EXEPTION:
-
-package sv.edu.udb.exception;
-
-public class ResourceNotFoundException extends RuntimeException {
-    public ResourceNotFoundException(String message) {
-        super(message);
-    }
-}
-
-CLASE ALUMNO SERVICE IMPL:
-
-package sv.edu.udb.service.impl;
-import org.springframework.stereotype.Service;
-import sv.edu.udb.controller.request.AlumnoRequestDTO;
-import sv.edu.udb.controller.response.AlumnoResponseDTO;
-import sv.edu.udb.Alumno;
-import sv.edu.udb.Materia;
-import sv.edu.udb.exception.ResourceNotFoundException;
-import sv.edu.udb.AlumnoRepository;
-import sv.edu.udb.MateriaRepository;
-import sv.edu.udb.service.AlumnoService;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
-@Service
-public class AlumnoServiceImpl implements AlumnoService {
+@RestController
+@RequestMapping("/api")
+@Data
+public class GestionController {
     private final AlumnoRepository alumnoRepository;
     private final MateriaRepository materiaRepository;
 
-    public AlumnoServiceImpl(AlumnoRepository alumnoRepository, MateriaRepository materiaRepository) {
+    public GestionController(AlumnoRepository alumnoRepository, MateriaRepository materiaRepository) {
         this.alumnoRepository = alumnoRepository;
         this.materiaRepository = materiaRepository;
     }
 
-    @Override
-    public List<AlumnoResponseDTO> getAllAlumnos() {
-        return alumnoRepository.findAll().stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+    // --- ALUMNOS ---
+
+    @GetMapping("/alumnos")
+    public List<Alumnos> listarAlumnos() {
+        return alumnoRepository.findAll();
     }
 
-    @Override
-    public AlumnoResponseDTO createAlumno(AlumnoRequestDTO request) {
-        Materia materia = materiaRepository.findById(request.getIdMateria())
-                .orElseThrow(() -> new ResourceNotFoundException("Materia no encontrada"));
-
-        Alumno alumno = new Alumno();
-        alumno.setNombre(request.getNombre());
-        alumno.setApellido(request.getApellido());
-        alumno.setMateria(materia);
-
-        return convertToDTO(alumnoRepository.save(alumno));
+    @PostMapping("/alumnos")
+    public Alumnos agregarAlumno(@RequestBody Alumnos alumno) {
+        return alumnoRepository.save(alumno);
     }
 
-    @Override
-    public AlumnoResponseDTO getAlumnoById(Long id) {
-        Alumno alumno = alumnoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Alumno no encontrado"));
-        return convertToDTO(alumno);
+    @PutMapping("/alumnos/{id}")
+    public ResponseEntity<?> actualizarAlumno(@PathVariable Long id, @RequestBody Alumnos alumno) {
+        Optional<Alumnos> optionalAlumno = alumnoRepository.findById(id);
+        if (optionalAlumno.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        Alumnos a = optionalAlumno.get();
+        a.setNombre(alumno.getNombre());
+        a.setApellido(alumno.getApellido());
+        alumnoRepository.save(a);
+        return ResponseEntity.ok(a);
     }
 
-    private AlumnoResponseDTO convertToDTO(Alumno alumno) {
-        AlumnoResponseDTO dto = new AlumnoResponseDTO();
-        dto.setId(alumno.getId());
-        dto.setNombre(alumno.getNombre());
-        dto.setApellido(alumno.getApellido());
-        dto.setMateria(alumno.getMateria().getNombre());
-        return dto;
+    @DeleteMapping("/alumnos/{id}")
+    public ResponseEntity<?> eliminarAlumno(@PathVariable Long id) {
+        if (!alumnoRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        alumnoRepository.deleteById(id);
+        return ResponseEntity.ok("Alumno eliminado");
     }
-}
 
-INTERFAZ ALUMNO SERVICE:
+    // --- MATERIAS ---
 
-package sv.edu.udb.service;
-import sv.edu.udb.controller.request.AlumnoRequestDTO;
-import sv.edu.udb.controller.response.AlumnoResponseDTO;
-import java.util.List;
+    @GetMapping("/materias")
+    public List<Materias> listarMaterias() {
+        return materiaRepository.findAll();
+    }
 
-public interface AlumnoService {
-    List<AlumnoResponseDTO> getAllAlumnos();
-    AlumnoResponseDTO createAlumno(AlumnoRequestDTO request);
-    AlumnoResponseDTO getAlumnoById(Long id);
+    @PostMapping("/materias")
+    public Materias agregarMateria(@RequestBody Materias materia) {
+        return materiaRepository.save(materia);
+    }
+
+    @PutMapping("/materias/{id}")
+    public ResponseEntity<?> actualizarMateria(@PathVariable Long id, @RequestBody Materias materia) {
+        Optional<Materias> optionalMateria = materiaRepository.findById(id);
+        if (optionalMateria.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        Materias m = optionalMateria.get();
+        m.setNombre(materia.getNombre());
+        materiaRepository.save(m);
+        return ResponseEntity.ok(m);
+    }
+
+    @DeleteMapping("/materias/{id}")
+    public ResponseEntity<?> eliminarMateria(@PathVariable Long id) {
+        if (!materiaRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        materiaRepository.deleteById(id);
+        return ResponseEntity.ok("Materia eliminada");
+    }
 }
