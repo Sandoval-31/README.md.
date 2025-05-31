@@ -1,0 +1,38 @@
+CREATE DATABASE Desafio3;
+
+DROP TABLE IF EXISTS alumnos;
+DROP TABLE IF EXISTS materias;
+
+CREATE TABLE materias (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    nombre VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE alumnos (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    nombre VARCHAR(255) NOT NULL,
+    apellido VARCHAR(255) NOT NULL,
+    id_materia BIGINT NOT NULL,
+    CONSTRAINT FK_alumnos_materias FOREIGN KEY (id_materia) REFERENCES materias(id)
+);
+
+CREATE TABLE usuarios (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    username NVARCHAR(50) UNIQUE NOT NULL,
+    password NVARCHAR(255) NOT NULL
+);
+
+INSERT INTO materias (nombre) VALUES ('Math');
+INSERT INTO materias (nombre) VALUES ('Science');
+INSERT INTO materias (nombre) VALUES ('History');
+INSERT INTO materias (nombre) VALUES ('English');
+INSERT INTO materias (nombre) VALUES ('Art');
+
+INSERT INTO alumnos (nombre, apellido, id_materia) VALUES ('Alice', 'Smith', 1);
+INSERT INTO alumnos (nombre, apellido, id_materia) VALUES ('Bob', 'Johnson', 2);
+INSERT INTO alumnos (nombre, apellido, id_materia) VALUES ('Charlie', 'Brown', 3);
+INSERT INTO alumnos (nombre, apellido, id_materia) VALUES ('David', 'Lee', 4);
+INSERT INTO alumnos (nombre, apellido, id_materia) VALUES ('Eve', 'Wilson', 5);
+
+SELECT * FROM materias
+SELECT * FROM alumnos
